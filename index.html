@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VibeRoom</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ── AMBIENT BACKGROUND ── -->
+  <div class="bg">
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+    <div class="orb orb-c"></div>
+  </div>
+
+  <!-- ── SOUND WAVE CANVAS ── -->
+  <canvas id="wave-canvas"></canvas>
+
+  <!-- ── HOMEPAGE CARD ── -->
+  <main class="stage">
+    <div class="card">
+
+      <header class="card-header">
+        <!-- Animated bars icon -->
+        <div class="logo-icon" aria-hidden="true">
+          <span class="bar" style="--h:40%;--d:0s"></span>
+          <span class="bar" style="--h:80%;--d:.15s"></span>
+          <span class="bar" style="--h:100%;--d:.05s"></span>
+          <span class="bar" style="--h:60%;--d:.25s"></span>
+          <span class="bar" style="--h:30%;--d:.1s"></span>
+        </div>
+        <h1 class="logo-name">VibeRoom</h1>
+        <p class="logo-tagline">music &nbsp;·&nbsp; together &nbsp;·&nbsp; live</p>
+      </header>
+
+      <div class="card-rule"></div>
+
+      <div class="card-body">
+
+        <!-- Create Room -->
+        <button class="btn-create" id="btn-create">
+          <svg class="btn-icon" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.4"/>
+            <path d="M10 6.5v7M6.5 10h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          Create a Room
+        </button>
+
+        <!-- OR divider -->
+        <div class="or-row">
+          <span class="or-line"></span>
+          <span class="or-text">or join with a code</span>
+          <span class="or-line"></span>
+        </div>
+
+        <!-- Join Room -->
+        <div class="join-row">
+          <div class="input-shell">
+            <svg class="input-icon" viewBox="0 0 20 20" fill="none">
+              <rect x="3" y="5" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M7 10h6M10 7.5L12.5 10 10 12.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <input
+              type="text"
+              id="room-code"
+              class="room-input"
+              placeholder="Room code…"
+              maxlength="12"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
+          <button class="btn-join" id="btn-join">Join</button>
+        </div>
+
+        <p class="hint">Codes are 4–12 characters · case-insensitive</p>
+      </div>
+
+      <footer class="card-footer">
+        <span class="live-pip"></span>
+        <span id="listener-count">2,418</span>&nbsp;people listening right now
+      </footer>
+
+    </div>
+  </main>
+
+  <script>
+    /* ── Animated wave background ─────────────────────────────── */
+    const canvas = document.getElementById('wave-canvas');
+    const ctx    = canvas.getContext('2d');
+    let W, H;
+
+    const resize = () => {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const WAVES = [
+      { freq: 0.016, amp: 52,  phase: 0,   speed: 1.2, alpha: 0.08, color: '#f5a623' },
+      { freq: 0.021, amp: 36,  phase: 2.4, speed: 1.7, alpha: 0.05, color: '#e8613a' },
+      { freq: 0.012, amp: 70,  phase: 4.8, speed: 0.8, alpha: 0.04, color: '#f5c842' },
+    ];
+
+    let tick = 0;
+    (function loop() {
+      ctx.clearRect(0, 0, W, H);
+      const cy = H * 0.74;
+      WAVES.forEach(w => {
+        ctx.beginPath();
+        for (let x = 0; x <= W; x += 2) {
+          const y = cy + Math.sin(x * w.freq + tick * 0.001 * w.speed) * w.amp;
+          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+        ctx.fillStyle   = w.color;
+        ctx.globalAlpha = w.alpha;
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      tick++;
+      requestAnimationFrame(loop);
+    })();
+
+    /* ── Live listener counter ────────────────────────────────── */
+    let liveCount = 2418;
+    const countEl = document.getElementById('listener-count');
+    setInterval(() => {
+      liveCount += Math.round((Math.random() - 0.45) * 6);
+      countEl.textContent = liveCount.toLocaleString();
+    }, 2800);
+
+    /* ── Button logic ─────────────────────────────────────────── */
+    const createBtn = document.getElementById('btn-create');
+    const joinBtn   = document.getElementById('btn-join');
+    const codeInput = document.getElementById('room-code');
+
+    createBtn.addEventListener('click', () => {
+      ripple(createBtn);
+      // TODO: navigate to /create
+    });
+
+    joinBtn.addEventListener('click', () => {
+      const code = codeInput.value.trim();
+      if (!code) { shake(codeInput); return; }
+      ripple(joinBtn);
+      // TODO: navigate to /room/:code
+    });
+
+    codeInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') joinBtn.click();
+    });
+
+    /* Micro-animations */
+    function ripple(el) {
+      el.classList.remove('anim-pulse');
+      void el.offsetWidth;
+      el.classList.add('anim-pulse');
+      el.addEventListener('animationend', () => el.classList.remove('anim-pulse'), { once: true });
+    }
+    function shake(el) {
+      el.classList.remove('anim-shake');
+      void el.offsetWidth;
+      el.classList.add('anim-shake');
+      el.addEventListener('animationend', () => el.classList.remove('anim-shake'), { once: true });
+    }
+  </script>
+</body>
+</html>
